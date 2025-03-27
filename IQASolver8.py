@@ -4,7 +4,7 @@ from scipy import stats
 import numpy as np
 from dataloader2 import DataLoader
 from RestoredNet3 import *
-from CNNVIT_net8_up import *
+from CNNVIT_net import *
 
 import timm
 from timm.models.vision_transformer import Block
