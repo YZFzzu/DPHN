@@ -19,7 +19,7 @@ class demoIQASolver(object):
         self.remodel = RestoredNet3().cuda()
         self.remodel.train(True)
         self.l1_loss = torch.nn.L1Loss().cuda()
-        self.lr1 = config.lr #2e-4
+        self.lr1 =2e-4
         self.lr2 =2e-4
         self.resnet50 = timm.create_model('resnet50', pretrained=True).cuda()
         self.vit = timm.create_model('vit_base_patch16_224', pretrained=True).cuda()
@@ -76,13 +76,12 @@ class demoIQASolver(object):
             # save data for one epoch
             pred_epoch = []
             labels_epoch = []
-            for img, label in self.train_data: #img(16,3,224,224) label(16,)
+            for img, label in self.train_data:
                 img = torch.as_tensor(img.cuda())
                 label = torch.as_tensor(label.cuda())
                 self.optimizer.zero_grad()
                 restored_img = self.remodel(img)
-#初始化 SaveOutput 对象：在 ViT 模型的初始化阶段，为特定的 Block 层注册了 SaveOutput 钩子，这样每当这些层进行前向传播时，它们的输出都会被保存起来。
-                _x = self.vit(img)#_x(16,1000)
+                _x = self.vit(img)
                 vit_dis_layer0,vit_dis_layer1,vit_dis_layer2,vit_dis_layer3,vit_dis_layer4= get_vit_feature_layer(self.save_output)#0-4 (16,196,768)
                 vit_dis = get_vit_feature(self.save_output)
                 self.save_output.outputs.clear()
@@ -96,21 +95,20 @@ class demoIQASolver(object):
                 B, N, C = vit_ref.shape
                 H, W = 14, 14
                 vit_dis = vit_dis.transpose(1, 2).view(B, C, H, W)
-                vit_ref = vit_ref.transpose(1, 2).view(B, C, H, W)#(16,768*5,14,14)
+                vit_ref = vit_ref.transpose(1, 2).view(B, C, H, W)
 
 
                 _ = self.resnet50(img)#_(16,1000)
-                cnn_dis= get_resnet_feature(self.save_output)# 0,1,2都是[B,256,56,56]（16，768，56，56）
+                cnn_dis= get_resnet_feature(self.save_output)
                 self.save_output.outputs.clear()
-                #调整维度
-                cnn_dis= unified_dimensions(cnn_dis)# (16,196,768)
-                #融合
-                fused_features_layer0 = self.transformer_block(vit_dis_layer0, extra_kv=cnn_dis)  # (16,196,768)
-                fused_features_layer1 = self.transformer_block(vit_dis_layer1, extra_kv=cnn_dis)  # (16,196,768)
-                fused_features_layer2 = self.transformer_block(vit_dis_layer2, extra_kv=cnn_dis)  # (16,196,768)
-                fused_features_layer3 = self.transformer_block(vit_dis_layer3, extra_kv=cnn_dis)  # (16,196,768)
-                fused_features_layer4 = self.transformer_block(vit_dis_layer4, extra_kv=cnn_dis)  # (16,196,768)
 
+                cnn_dis= unified_dimensions(cnn_dis)
+               
+                fused_features_layer0 = self.transformer_block(vit_dis_layer0, extra_kv=cnn_dis)  
+                fused_features_layer1 = self.transformer_block(vit_dis_layer1, extra_kv=cnn_dis) 
+                fused_features_layer2 = self.transformer_block(vit_dis_layer2, extra_kv=cnn_dis) 
+                fused_features_layer3 = self.transformer_block(vit_dis_layer3, extra_kv=cnn_dis) 
+                fused_features_layer4 = self.transformer_block(vit_dis_layer4, extra_kv=cnn_dis)  
                 fused_features = fused(fused_features_layer0,fused_features_layer1,fused_features_layer2,fused_features_layer3,fused_features_layer4)
 
                 pred=self.predict(vit_dis,vit_ref,fused_features)
@@ -135,15 +133,15 @@ class demoIQASolver(object):
             print('train epoch:{} / loss:{:.4} / SRCC:{:.4} / PLCC:{:.4}'.format(t + 1, train_ret_loss, train_rho_srcc, train_rho_prcc))
             # Update optimizer
             if (t + 1) % 10 == 0:
-                lr1 = (self.lr1 * 9) / pow(10, ((t+1) // 10))#每10个epoch下降0.9
-                lr2 =  (self.lr2 * 9) / pow(10, ((t+1) // 10))#每10个epoch下降0.9
+                lr1 = (self.lr1 * 9) / pow(10, ((t+1) // 10))
+                lr2 =  (self.lr2 * 9) / pow(10, ((t+1) // 10))
                 self.optimizer = torch.optim.Adam([
                 {'params': self.remodel.parameters(), 'lr': lr1},
                 {'params': self.transformer_block.parameters(), 'lr': lr2, 'weight_decay': 1e-05},
                 {'params': self.predict.parameters(), 'lr': lr2, 'weight_decay': 1e-05}
             ])
-            for i, param_group in enumerate(self.optimizer.param_groups):
-                print(f"  The next epoch. Param Group {i} - LR: {param_group['lr']} - Weight Decay: {param_group['weight_decay']}")
+           # for i, param_group in enumerate(self.optimizer.param_groups):
+           #     print(f"  The next epoch. Param Group {i} - LR: {param_group['lr']} - Weight Decay: {param_group['weight_decay']}")
 
             test_ret_loss, test_rho_srcc, test_rho_prcc = self.test(self.test_data)
             if test_rho_srcc > best_srcc:
@@ -170,7 +168,6 @@ class demoIQASolver(object):
             self.transformer_block.eval()
             self.vit.eval()
             self.resnet50.eval()
-            # save data for one epoch
             pred_epoch = []
             labels_epoch = []
 
@@ -195,18 +192,17 @@ class demoIQASolver(object):
                 vit_ref = vit_ref.transpose(1, 2).view(B, C, H, W)
                 vit_dis = vit_dis.transpose(1, 2).view(B, C, H, W)
 
-                _ = self.resnet50(img)  # _(16,1000)
-                cnn_dis= get_resnet_feature(self.save_output)  # (16,768,56,56)  # 0,1,2都是[B,768,56,56]
+                _ = self.resnet50(img)  
+                cnn_dis= get_resnet_feature(self.save_output) 
                 self.save_output.outputs.clear()
 
-                # 调整维度
                 cnn_dis=unified_dimensions(cnn_dis)
 
-                fused_features_layer0 = self.transformer_block(vit_dis_layer0, extra_kv=cnn_dis)  # (16,196,768)
-                fused_features_layer1 = self.transformer_block(vit_dis_layer1, extra_kv=cnn_dis)  # (16,196,768)
-                fused_features_layer2 = self.transformer_block(vit_dis_layer2, extra_kv=cnn_dis)  # (16,196,768)
-                fused_features_layer3 = self.transformer_block(vit_dis_layer3, extra_kv=cnn_dis)  # (16,196,768)
-                fused_features_layer4 = self.transformer_block(vit_dis_layer4, extra_kv=cnn_dis)  # (16,196,768)
+                fused_features_layer0 = self.transformer_block(vit_dis_layer0, extra_kv=cnn_dis)  
+                fused_features_layer1 = self.transformer_block(vit_dis_layer1, extra_kv=cnn_dis) 
+                fused_features_layer2 = self.transformer_block(vit_dis_layer2, extra_kv=cnn_dis) 
+                fused_features_layer3 = self.transformer_block(vit_dis_layer3, extra_kv=cnn_dis)  
+                fused_features_layer4 = self.transformer_block(vit_dis_layer4, extra_kv=cnn_dis) 
                 fused_features = fused(fused_features_layer0,fused_features_layer1,fused_features_layer2,fused_features_layer3,fused_features_layer4)
 
                 pred = self.predict(vit_dis,vit_ref, fused_features)
@@ -222,7 +218,6 @@ class demoIQASolver(object):
                 pred_epoch = np.append(pred_epoch, pred_batch_numpy)
                 labels_epoch = np.append(labels_epoch, labels_batch_numpy)
 
-            # compute correlation coefficient
             test_rho_srcc, _ = spearmanr(np.squeeze(pred_epoch), np.squeeze(labels_epoch))
             test_rho_prcc, _ = pearsonr(np.squeeze(pred_epoch), np.squeeze(labels_epoch))
             print('===== loss:{:.4} ===== SRCC:{:.4} ===== PLCC:{:.4}'.format(np.mean(losses), test_rho_srcc,
