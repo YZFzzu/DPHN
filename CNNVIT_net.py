@@ -83,7 +83,6 @@ class ModifiedTransformerBlock(nn.Module):
         k, v = self.to_kv(x).chunk(2, dim=-1)
 
         if extra_kv is not None:
-            # 将ResNet50特征作为额外的键值对
             extra_k, extra_v = self.to_kv(extra_kv).chunk(2, dim=-1)
             k = torch.cat([k, extra_k], dim=-2)
             v = torch.cat([v, extra_v], dim=-2)
@@ -158,4 +157,3 @@ class ImageQualityPredictor(nn.Module):
         out=self.flatten(out)
         out = self.fc(out)
         return out
-###
