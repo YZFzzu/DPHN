@@ -3,8 +3,7 @@ import torch
 import argparse
 import random
 import numpy as np
-from dataset_folders import pil_loader
-from IQASolver8_up import demoIQASolver
+from IQASolver import demoIQASolver
 import torchvision
 
 
@@ -16,19 +15,13 @@ def main(config):
         folder_path = {
             'live': '../DATE/live/',
             'csiq': '../DATE/csiq',
-            'tid2013': '../DATE/tid2013/',
-            'kadid-10k': '../DATE/kadid-10k/',
             'livec': '../DATE/livec/',
-            'koniq-10k': '../DATE/koniq-10k/',
             'livemd':'../DATE/livemd'
         }
         img_num = {
             'live': list(range(0, 29)),
             'csiq': list(range(0, 30)),
-            'tid2013': list(range(0, 25)),
-            'kadid-10k':list(range(0, 81)),
             'livec': list(range(0, 1162)),
-            'koniq-10k': list(range(0, 10073)),
             'livemd': list(range(0, 450)),
         }
         sel_num = img_num[config.dataset]
@@ -49,16 +42,15 @@ def main(config):
 if __name__ == '__main__':
     os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', dest='mode', type=str, default='train', help='train')
-    parser.add_argument('--dataset', dest='dataset', type=str, default='live', help='Support datasets: livec|koniq-10k|cid2013|live|csiq|tid2013|kadid-10k')
-    parser.add_argument('--train_patch_num', dest='train_patch_num', type=int, default=16, help='Number of sample patches from training image')
-    parser.add_argument('--test_patch_num', dest='test_patch_num', type=int, default=16, help='Number of sample patches from testing image')
-    parser.add_argument('--lr', dest='lr', type=float, default=2e-4, help='Learning rate')
-    parser.add_argument('--weight_decay', dest='weight_decay', type=float, default=0, help='Weight decay')
-    parser.add_argument('--batch_size', dest='batch_size', type=int, default=16, help='Batch size')
-    parser.add_argument('--epochs', dest='epochs', type=int, default=30, help='Epochs for training')
-    parser.add_argument('--patch_size', dest='patch_size', type=int, default=224, help='Crop size for training & testing image patches')
-    parser.add_argument('--train_test_num', dest='train_test_num', type=int, default=1, help='Train-test times')
+    parser.add_argument('--mode', dest='mode', type=str, default='train')
+    parser.add_argument('--dataset', dest='dataset', type=str, default=' ', help='Support datasets: live|csiq|livec|livemd')
+    parser.add_argument('--train_patch_num', dest='train_patch_num', type=int, default= )
+    parser.add_argument('--test_patch_num', dest='test_patch_num', type=int, default= )
+    parser.add_argument('--weight_decay', dest='weight_decay', type=float, default= )
+    parser.add_argument('--batch_size', dest='batch_size', type=int, default= )
+    parser.add_argument('--epochs', dest='epochs', type=int, default= )
+    parser.add_argument('--patch_size', dest='patch_size', type=int, default= )
+    parser.add_argument('--train_test_num', dest='train_test_num', type=int, default= )
 
     config = parser.parse_args()
     main(config)
